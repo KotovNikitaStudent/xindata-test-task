@@ -1,6 +1,8 @@
 import sqlite3
 import pandas as pd
 
+from cache import cache_analysis
+
 
 def get_csv_meta(csv_path: str) -> pd.DataFrame:
     df = pd.read_csv(csv_path)
@@ -34,8 +36,7 @@ def get_table_structure(db_path: str) -> dict[str, list[str]]:
 
     with sqlite3.connect(db_path) as conn:
         cursor = conn.cursor()
-
-        cursor.execute("""SELECT name FROM sqlite_master WHERE type='table';""")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = [row[0] for row in cursor.fetchall()]
 
         for table in tables:
@@ -46,18 +47,36 @@ def get_table_structure(db_path: str) -> dict[str, list[str]]:
     return table_structure
 
 
-def analyze_columns(db_path, table_name, cat_threshold=20):
-    conn = sqlite3.connect(db_path)
-    df = pd.read_sql(f"SELECT * FROM {table_name}", conn)
-
+@cache_analysis
+def analyze_columns(
+    db_path, table_name, cat_threshold=20
+) -> tuple[dict[str, list[str]], list[str]]:
     categorical = {}
     numerical = []
 
-    for col in df.columns:
-        unique_vals = df[col].dropna().unique()
-        if df[col].dtype == object or len(unique_vals) <= cat_threshold:
-            categorical[col] = list(map(str, sorted(unique_vals)))
-        else:
-            numerical.append(col)
-    
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(f"PRAGMA table_info({table_name});")
+        columns = [info[1] for info in cursor.fetchall()]
+
+        for col in columns:
+            cursor.execute(
+                f"SELECT typeof({col}), {col} FROM {table_name} WHERE {col} IS NOT NULL LIMIT 1;"
+            )
+            result = cursor.fetchone()
+            sample_type = result[0].upper() if result else "NULL"
+
+            cursor.execute(f"SELECT COUNT(DISTINCT {col}) FROM {table_name};")
+            unique_count = cursor.fetchone()[0]
+
+            if sample_type == "TEXT" or unique_count <= cat_threshold:
+                cursor.execute(
+                    f"SELECT DISTINCT {col} FROM {table_name} WHERE {col} IS NOT NULL;"
+                )
+                categories = sorted(str(row[0]) for row in cursor.fetchall())
+                categorical[col] = categories
+            else:
+                numerical.append(col)
+
     return categorical, numerical

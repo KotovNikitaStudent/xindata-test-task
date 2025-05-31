@@ -3,7 +3,7 @@ from llm_handler import handle_request
 from utils import pandas_to_sql
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="xinda test task")
 
     parser.add_argument(
@@ -14,6 +14,11 @@ def main():
         help="Задать вопрос на естественном языке для анализа",
         type=str,
     )
+    parser.add_argument(
+        "--verbose",
+        help="Показать подробную информацию (SQL, результаты выполнения)",
+        action="store_true",
+    )
 
     args = parser.parse_args()
 
@@ -23,7 +28,7 @@ def main():
         )
 
     if args.ask:
-        handle_request(args.ask)
+        handle_request(args.ask, verbose=args.verbose)
 
 
 if __name__ == "__main__":

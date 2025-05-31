@@ -16,51 +16,48 @@ client = OpenAI(
 )
 
 
-def ask_llm(prompt: str):
+def ask_llm(prompt: str) -> str:
     response = client.chat.completions.create(
         model=settings.LLM_MODEL,
         messages=[{"role": "user", "content": prompt}],
         temperature=settings.LLM_TEMPERATURE,
+        seed=settings.LLM_SEED,
     )
     return response.choices[0].message.content
 
 
-def handle_request(question: str):
+def handle_request(question: str, verbose: bool = False) -> None:
     table_structure = get_table_structure(settings.SQLITE_DB)
-    
+
     categorical, numerical = analyze_columns(settings.SQLITE_DB, settings.SQLITE_TABLE)
 
     prompt = get_query_prompt.format(
         table_name=settings.SQLITE_TABLE,
         columns=", ".join(table_structure[settings.SQLITE_TABLE]),
         question=question,
-        categorical="".join([f"{col} - {', '.join(values)}\n" for col, values in categorical.items()]),
+        categorical="".join(
+            [f"{col} - {', '.join(values)}\n" for col, values in categorical.items()]
+        ),
         numerical=", ".join(numerical),
     )
 
-    print(prompt)
-    print("*" * 100)
+    sql_code = ask_llm(prompt).strip("```sql").strip("```")
 
-    sql_code = ask_llm(prompt)
+    result_df = execute_sql_query(settings.SQLITE_DB, sql_code)
 
-    sql_code = sql_code.strip("```sql").strip("```")
+    if verbose:
+        print("\n🔍 Сгенерированный SQL-запрос:")
+        print(sql_code)
+        print("\n📊 Результат выполнения запроса:")
+        print(result_df.to_string(index=False))
 
-    print(sql_code)
-    print("*" * 100)
-
-    result = execute_sql_query(settings.SQLITE_DB, sql_code)
-
-    print(result)
-    print("*" * 100)
-
-    prompt = explanation_prompt.format(
-        sql_code=sql_code, result=result.to_markdown(index=False), question=question
+    explanation = explanation_prompt.format(
+        sql_code=sql_code,
+        result=result_df.to_markdown(index=False),
+        question=question,
     )
 
-    answer = ask_llm(prompt)
+    answer = ask_llm(explanation)
+
+    print("\n💬 Ответ:")
     print(answer)
-
-
-if __name__ == "__main__":
-    question = "Какие есть категории фрилансеров и сколько их в каждой категории?"
-    handle_request(question)
