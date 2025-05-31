@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     SQLITE_DB: str = "freelancers.db"
     SQLITE_TABLE: str = "freelancers"
 
-    CSV_FILE_PATH: str = "data/freelancer_earning_bd.csv"
+    CSV_FILE_PATH: str = "data/freelancer_earnings_bd.csv"
 
     CACHE_DIR: str = ".cache"
 

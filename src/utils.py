@@ -47,6 +47,19 @@ def get_table_structure(db_path: str) -> dict[str, list[str]]:
     return table_structure
 
 
+def table_exists(db_path: str, table_name: str) -> bool:
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name=?;
+        """,
+            (table_name,),
+        )
+        return cursor.fetchone() is not None
+
+
 @cache_analysis
 def analyze_columns(
     db_path, table_name, cat_threshold=20
