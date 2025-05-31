@@ -1,6 +1,10 @@
 import argparse
 from llm_handler import handle_request
 from utils import pandas_to_sql
+from settings import get_settings
+
+
+settings = get_settings()
 
 
 def main() -> None:
@@ -23,9 +27,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.is_load_table:
-        pandas_to_sql(
-            "data/freelancer_earnings_bd.csv", "freelancers.db", "freelancers"
-        )
+        pandas_to_sql(settings.CSV_FILE_PATH, settings.SQLITE_DB, settings.SQLITE_TABLE)
 
     if args.ask:
         handle_request(args.ask, verbose=args.verbose)
