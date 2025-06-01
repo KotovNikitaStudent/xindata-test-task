@@ -24,7 +24,7 @@ def main() -> None:
 
     if args.load_table:
         if not os.path.exists(settings.CSV_FILE_PATH):
-            logger.error(f"CSV файл не найден: {settings.CSV_FILE_PATH}")
+            logger.error(f"CSV file not found: {settings.CSV_FILE_PATH}")
             return
         db_manager.load_csv_to_sql(settings.CSV_FILE_PATH, settings.SQLITE_TABLE)
 
