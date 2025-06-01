@@ -4,12 +4,6 @@ import pandas as pd
 from cache import cache_analysis
 
 
-def get_csv_meta(csv_path: str) -> pd.DataFrame:
-    df = pd.read_csv(csv_path)
-    df.columns = [c.strip().replace(" ", "_") for c in df.columns]
-    return df
-
-
 def pandas_to_sql(filename: str, db_name: str, tablename: str) -> None:
     df = pd.read_csv(filename)
 

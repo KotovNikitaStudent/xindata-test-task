@@ -1,10 +1,13 @@
 import argparse
+import os
 from llm_handler import handle_request
 from utils import pandas_to_sql
 from settings import get_settings
+from logger import get_logger
 
 
 settings = get_settings()
+logger = get_logger(__name__)
 
 
 def main() -> None:
@@ -27,6 +30,9 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.is_load_table:
+        if not os.path.exists(settings.CSV_FILE_PATH):
+            logger.error(f"CSV файл не найден: {settings.CSV_FILE_PATH}")
+            return
         pandas_to_sql(settings.CSV_FILE_PATH, settings.SQLITE_DB, settings.SQLITE_TABLE)
 
     if args.ask:

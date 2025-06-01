@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     SQLITE_TABLE: str = "freelancers"
 
     CSV_FILE_PATH: str = "data/freelancer_earnings_bd.csv"
+    CAT_THRESHOLD: int = 20
 
     CACHE_DIR: str = ".cache"
 
